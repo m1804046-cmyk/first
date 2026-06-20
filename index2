@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Автоматизация сбора данных из Excel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f8fc;
+      --card:#ffffff;
+      --text:#182230;
+      --muted:#667085;
+      --line:#e7ecf3;
+      --primary:#5b67f1;
+      --primary-2:#7c5cff;
+      --mint:#2cc9a6;
+      --mint-soft:#eafcf7;
+      --blue-soft:#eef2ff;
+      --yellow-soft:#fff7df;
+      --red-soft:#fff0f0;
+      --shadow:0 20px 60px rgba(38, 51, 77, 0.08);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:'Inter', sans-serif;
+      background:linear-gradient(180deg,#f8fbff 0%, #f6f8fc 100%);
+      color:var(--text);
+      line-height:1.55;
+    }
+
+    a{text-decoration:none;color:inherit}
+    .container{
+      width:min(1180px, calc(100% - 32px));
+      margin:0 auto;
+    }
+
+    .nav{
+      position:fixed;
+      top:0; left:0; right:0;
+      z-index:999;
+      transition:.3s ease;
+      padding:16px 0;
+    }
+    .nav.scrolled{
+      background:rgba(255,255,255,.82);
+      backdrop-filter:blur(18px);
+      box-shadow:0 8px 30px rgba(15,23,42,.08);
+    }
+    .nav-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+    }
+    .logo{
+      font-weight:800;
+      letter-spacing:-.02em;
+      color:#fff;
+      transition:.3s;
+    }
+    .nav.scrolled .logo{color:var(--text)}
+    .menu{
+      display:flex;
+      gap:22px;
+      list-style:none;
+      padding:0; margin:0;
+    }
+    .menu a{
+      color:rgba(255,255,255,.88);
+      font-weight:600;
+      font-size:14px;
+      transition:.2s;
+    }
+    .nav.scrolled .menu a{color:var(--muted)}
+    .menu a:hover{opacity:.75}
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      padding:130px 0 80px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.22), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(255,255,255,.18), transparent 28%),
+        linear-gradient(135deg, #4f5cf0 0%, #7b61ff 45%, #2cc9a6 100%);
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:auto 0 0 0;
+      height:120px;
+      background:linear-gradient(180deg, rgba(246,248,252,0) 0%, rgba(246,248,252,1) 100%);
+      pointer-events:none;
+    }
+    .hero-grid{
+      position:relative;
+      z-index:1;
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:34px;
+      align-items:center;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:rgba(255,255,255,.15);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.25);
+      backdrop-filter:blur(14px);
+      border-radius:999px;
+      padding:10px 16px;
+      font-size:14px;
+      font-weight:700;
+      margin-bottom:18px;
+    }
+    .hero h1{
+      margin:0 0 18px;
+      font-size:clamp(36px, 5vw, 68px);
+      line-height:1.02;
+      letter-spacing:-.04em;
+      color:#fff;
+    }
+    .hero h1 span{
+      display:block;
+      color:#dffcf5;
+    }
+    .hero p.lead{
+      margin:0 0 28px;
+      color:rgba(255,255,255,.9);
+      font-size:18px;
+      max-width:760px;
+    }
+
+    .hero-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-bottom:28px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-height:52px;
+      padding:0 22px;
+      border-radius:14px;
+      font-weight:800;
+      transition:.25s ease;
+      cursor:pointer;
+    }
+    .btn-primary{
+      background:#fff;
+      color:var(--primary);
+      box-shadow:0 18px 40px rgba(0,0,0,.12);
+    }
+    .btn-primary:hover{transform:translateY(-2px)}
+    .btn-secondary{
+      background:rgba(255,255,255,.12);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.22);
+      backdrop-filter:blur(12px);
+    }
+    .btn-secondary:hover{transform:translateY(-2px)}
+
+    .hero-stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+    }
+    .hero-stat{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.22);
+      backdrop-filter:blur(12px);
+      border-radius:18px;
+      padding:16px;
+      color:#fff;
+    }
+    .hero-stat strong{
+      display:block;
+      font-size:28px;
+      line-height:1;
+      letter-spacing:-.03em;
+      margin-bottom:6px;
+    }
+    .hero-stat span{
+      font-size:13px;
+      color:rgba(255,255,255,.82);
+    }
+
+    .hero-card{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(16px);
+      border-radius:28px;
+      padding:24px;
+      box-shadow:0 24px 80px rgba(34, 44, 78, .14);
+      color:#fff;
+    }
+    .hero-card h3{
+      margin:0 0 16px;
+      font-size:22px;
+      letter-spacing:-.02em;
+    }
+    .mini-flow{
+      display:grid;
+      gap:12px;
+    }
+    .mini-step{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      padding:14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .mini-icon{
+      width:44px;height:44px;
+      border-radius:14px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.14);
+      font-size:20px;
+      flex:0 0 44px;
+    }
+    .mini-step strong{
+      display:block;
+      font-size:15px;
+      margin-bottom:2px;
+    }
+    .mini-step small{
+      color:rgba(255,255,255,.78);
+      font-size:13px;
+    }
+
+    section{
+      padding:84px 0;
+    }
+
+    .section-top{
+      margin-bottom:34px;
+      max-width:840px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 14px;
+      border-radius:999px;
+      background:var(--blue-soft);
+      color:var(--primary);
+      font-size:13px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      margin-bottom:14px;
+    }
+    h2{
+      margin:0 0 12px;
+      font-size:clamp(28px, 4vw, 48px);
+      line-height:1.08;
+      letter-spacing:-.04em;
+    }
+    .section-top p{
+      margin:0;
+      color:var(--muted);
+      font-size:18px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+    }
+    .grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:20px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:26px;
+      transition:.28s ease;
+    }
+    .card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 24px 60px rgba(38, 51, 77, 0.11);
+    }
+    .icon{
+      width:54px;height:54px;
+      display:grid;place-items:center;
+      border-radius:18px;
+      font-size:24px;
+      margin-bottom:16px;
+    }
+    .icon.blue{background:#eef2ff}
+    .icon.mint{background:#eafcf7}
+    .icon.yellow{background:#fff7df}
+    .icon.red{background:#fff0f0}
+    .card h3{
+      margin:0 0 10px;
+      font-size:22px;
+      letter-spacing:-.03em;
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .process{
+      display:grid;
+      grid-template-columns:1fr 80px 1fr 80px 1fr;
+      gap:14px;
+      align-items:center;
+      margin-top:24px;
+    }
+    .process-node{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:24px;
+      box-shadow:var(--shadow);
+      min-height:170px;
+    }
+    .process-node h4{
+      margin:0 0 10px;
+      font-size:20px;
+      letter-spacing:-.03em;
+    }
+    .process-node p{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+    }
+    .arrow{
+      display:grid;
+      place-items:center;
+      color:var(--primary);
+      font-size:34px;
+      font-weight:800;
+    }
+
+    .tag-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+    .tag{
+      padding:8px 12px;
+      border-radius:999px;
+      background:#f5f7fb;
+      border:1px solid var(--line);
+      color:#475467;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .impact{
+      background:
+        radial-gradient(circle at top right, rgba(124,92,255,.12), transparent 28%),
+        linear-gradient(180deg,#ffffff 0%, #f9fbff 100%);
+    }
+    .money-board{
+      background:#101828;
+      color:#fff;
+      border-radius:32px;
+      padding:28px;
+      box-shadow:0 30px 80px rgba(16,24,40,.18);
+    }
+    .money-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:16px;
+      margin-bottom:20px;
+    }
+    .money-item{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      padding:22px;
+    }
+    .money-item .label{
+      color:rgba(255,255,255,.68);
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:10px;
+    }
+    .money-item .value{
+      font-size:34px;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:-.04em;
+    }
+    .money-item .hint{
+      margin-top:8px;
+      color:rgba(255,255,255,.66);
+      font-size:13px;
+    }
+    .formula{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+      margin-top:14px;
+    }
+    .formula-box{
+      background:rgba(255,255,255,.04);
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius:18px;
+      padding:18px;
+    }
+    .formula-box strong{
+      display:block;
+      font-size:14px;
+      color:rgba(255,255,255,.72);
+      margin-bottom:8px;
+    }
+    .formula-box span{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:-.03em;
+    }
+    .money-note{
+      margin-top:18px;
+      color:rgba(255,255,255,.72);
+      font-size:14px;
+    }
+
+    .solution-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+    }
+    .step-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:24px;
+      position:relative;
+      box-shadow:var(--shadow);
+      min-height:220px;
+    }
+    .step-no{
+      width:38px;height:38px;
+      border-radius:12px;
+      display:grid;place-items:center;
+      background:linear-gradient(135deg,var(--primary),var(--primary-2));
+      color:#fff;
+      font-weight:900;
+      margin-bottom:16px;
+    }
+    .step-card h3{
+      margin:0 0 10px;
+      font-size:20px;
+      letter-spacing:-.03em;
+    }
+    .step-card p{
+      margin:0;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .timeline{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      margin-top:18px;
+    }
+    .timeline-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:28px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+    .week{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:var(--mint-soft);
+      color:#0f9f82;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:14px;
+    }
+    .timeline-card h3{
+      margin:0 0 12px;
+      font-size:24px;
+      letter-spacing:-.03em;
+    }
+    .timeline-card ul{
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+    }
+    .timeline-card li{margin:9px 0}
+
+    .risk-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+    }
+
+    .cta{
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,.12), transparent 20%),
+        linear-gradient(135deg, #4f5cf0 0%, #7b61ff 55%, #2cc9a6 100%);
+      color:#fff;
+      border-radius:36px;
+      padding:44px;
+      box-shadow:0 30px 90px rgba(79,92,240,.22);
+    }
+    .cta h2{
+      color:#fff;
+      margin-bottom:10px;
+    }
+    .cta p{
+      color:rgba(255,255,255,.88);
+      font-size:18px;
+      margin:0 0 22px;
+      max-width:800px;
+    }
+    .cta-list{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+      margin-top:18px;
+    }
+    .cta-item{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:20px;
+      padding:18px;
+    }
+    .cta-item strong{
+      display:block;
+      margin-bottom:8px;
+      font-size:16px;
+    }
+    .cta-item span{
+      color:rgba(255,255,255,.82);
+      font-size:14px;
+    }
+
+    .faq{
+      margin-top:20px;
+      display:grid;
+      gap:12px;
+    }
+    .faq-item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .faq-q{
+      width:100%;
+      border:none;
+      background:#fff;
+      padding:18px 22px;
+      text-align:left;
+      font:inherit;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      cursor:pointer;
+      font-weight:700;
+      color:var(--text);
+    }
+    .faq-q:hover{background:#fafcff}
+    .faq-a{
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .35s ease, padding .35s ease;
+      padding:0 22px;
+      color:var(--muted);
+      font-size:15px;
+    }
+    .faq-item.open .faq-a{
+      max-height:180px;
+      padding:0 22px 18px;
+    }
+    .faq-arrow{
+      transition:.3s ease;
+      color:var(--muted);
+      flex:0 0 auto;
+    }
+    .faq-item.open .faq-arrow{
+      transform:rotate(180deg);
+    }
+
+    .footer{
+      padding:30px 0 45px;
+      color:#98a2b3;
+      font-size:14px;
+      text-align:center;
+    }
+
+    .reveal{
+      opacity:0;
+      transform:translateY(28px);
+      transition:all .7s ease;
+    }
+    .reveal.visible{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    @media (max-width: 1080px){
+      .hero-grid,
+      .timeline,
+      .grid-4,
+      .risk-grid,
+      .money-grid,
+      .solution-grid,
+      .cta-list{
+        grid-template-columns:1fr 1fr;
+      }
+      .process{
+        grid-template-columns:1fr;
+      }
+      .arrow{
+        transform:rotate(90deg);
+        min-height:34px;
+      }
+    }
+
+    @media (max-width: 760px){
+      .menu{display:none}
+      .hero{padding-top:110px}
+      .hero-grid,
+      .grid-3,
+      .grid-4,
+      .money-grid,
+      .formula,
+      .solution-grid,
+      .timeline,
+      .risk-grid,
+      .cta-list{
+        grid-template-columns:1fr;
+      }
+      .hero-stats{grid-template-columns:1fr 1fr}
+      .cta{padding:28px}
+      section{padding:64px 0}
+      .hero-card{padding:20px}
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="logo">⚡ Автоматизация сбора данных</a>
+      <ul class="menu">
+        <li><a href="#case">Кейс</a></li>
+        <li><a href="#effect">Эффект</a></li>
+        <li><a href="#solution">Решение</a></li>
+        <li><a href="#plan">План</a></li>
+        <li><a href="#approve">Согласование</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="badge">📊 Идея по оптимизации работы команды аналитиков</div>
+        <h1>
+          Автоматизировать ручной сбор данных из Excel
+          <span>без бюджета и за 2 недели</span>
+        </h1>
+        <p class="lead">
+          Сейчас данные из Excel-таблиц вручную сводятся в общую таблицу.
+          Это занимает время команды, создаёт опечатки, дубли и риск ошибок.
+          Предлагаю автоматизировать процесс через <strong>n8n</strong> своими силами.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#effect" class="btn btn-primary">Посмотреть бизнес-эффект</a>
+          <a href="#solution" class="btn btn-secondary">Как это будет работать</a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <strong>10 ч</strong>
+            <span>экономия в неделю</span>
+          </div>
+          <div class="hero-stat">
+            <strong>520 ч</strong>
+            <span>экономия в год</span>
+          </div>
+          <div class="hero-stat">
+            <strong>650k ₽</strong>
+            <span>консервативный эффект в год</span>
+          </div>
+          <div class="hero-stat">
+            <strong>0 ₽</strong>
+            <span>доп. бюджет</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-card reveal">
+        <h3>Что меняется после автоматизации</h3>
+        <div class="mini-flow">
+          <div class="mini-step">
+            <div class="mini-icon">📥</div>
+            <div>
+              <strong>Excel-файлы</strong>
+              <small>источники данных команды</small>
+            </div>
+          </div>
+          <div class="mini-step">
+            <div class="mini-icon">⚙️</div>
+            <div>
+              <strong>N8N-сценарий</strong>
+              <small>сбор, проверка, удаление дублей</small>
+            </div>
+          </div>
+          <div class="mini-step">
+            <div class="mini-icon">📋</div>
+            <div>
+              <strong>Общая таблица</strong>
+              <small>готова автоматически и вовремя</small>
+            </div>
+          </div>
+          <div class="mini-step">
+            <div class="mini-icon">✅</div>
+            <div>
+              <strong>Меньше ошибок</strong>
+              <small>меньше ручного копирования и исправлений</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="case">
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">Текущая ситуация</div>
+        <h2>Сейчас ценный ресурс команды уходит на рутину</h2>
+        <p>
+          В команде 5 аналитиков. Вместо того чтобы анализировать данные и давать выводы,
+          часть времени уходит на ручной сбор данных из Excel и перенос в общую таблицу.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card reveal">
+          <div class="icon yellow">⏱️</div>
+          <h3>10 часов в неделю</h3>
+          <p>
+            Столько времени команда тратит на ручной сбор, перенос и сверку данных.
+            За год это превращается в 520 часов, которые можно вернуть в полезную работу.
+          </p>
+        </div>
+
+        <div class="card reveal">
+          <div class="icon red">⚠️</div>
+          <h3>Ошибки и дубли</h3>
+          <p>
+            Ручная работа даёт опечатки, дублирование строк, расхождения версий файлов
+            и риск неточных данных в итоговой общей таблице.
+          </p>
+        </div>
+
+        <div class="card reveal">
+          <div class="icon blue">🧠</div>
+          <h3>Потеря аналитической ценности</h3>
+          <p>
+            Экспертиза аналитиков стоит дорого. Её выгоднее направлять на анализ,
+            контроль качества и выводы, а не на механическое копирование данных.
+          </p>
+        </div>
+      </div>
+
+      <div class="process reveal">
+        <div class="process-node">
+          <h4>1. Источники</h4>
+          <p>
+            Несколько Excel-таблиц с данными из разных файлов и версий.
+          </p>
+          <div class="tag-row">
+            <span class="tag">Excel</span>
+            <span class="tag">несколько файлов</span>
+            <span class="tag">ручное обновление</span>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="process-node">
+          <h4>2. Ручная сводка</h4>
+          <p>
+            Аналитики копируют, сопоставляют, проверяют и собирают данные вручную.
+          </p>
+          <div class="tag-row">
+            <span class="tag">копирование</span>
+            <span class="tag">сверка</span>
+            <span class="tag">поиск ошибок</span>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="process-node">
+          <h4>3. Общая таблица</h4>
+          <p>
+            Финальный файл формируется вручную, а значит остаётся риск опечаток и дублей.
+          </p>
+          <div class="tag-row">
+            <span class="tag">общая таблица</span>
+            <span class="tag">риск ошибок</span>
+            <span class="tag">зависимость от человека</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="impact" id="effect">
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">Бизнес-эффект</div>
+        <h2>Экономия времени и денег — уже с первого месяца</h2>
+        <p>
+          Ниже — консервативный расчёт только по времени команды.
+          В нём ещё не учтены цена ошибок, исправлений и задержек в подготовке данных.
+        </p>
+      </div>
+
+      <div class="money-board reveal">
+        <div class="money-grid">
+          <div class="money-item">
+            <div class="label">Команда</div>
+            <div class="value">5</div>
+            <div class="hint">аналитиков в процессе</div>
+          </div>
+
+          <div class="money-item">
+            <div class="label">Средняя зарплата</div>
+            <div class="value">200k ₽</div>
+            <div class="hint">на 1 аналитика в месяц</div>
+          </div>
+
+          <div class="money-item">
+            <div class="label">Экономия времени</div>
+            <div class="value">520 ч</div>
+            <div class="hint">высвобождается в год</div>
+          </div>
+
+          <div class="money-item">
+            <div class="label">Экономический эффект</div>
+            <div class="value">650k ₽</div>
+            <div class="hint">в год, без доп. бюджета</div>
+          </div>
+        </div>
+
+        <div class="formula">
+          <div class="formula-box">
+            <strong>Стоимость 1 часа аналитика</strong>
+            <span>200 000 ₽ / 160 ч = 1 250 ₽</span>
+          </div>
+
+          <div class="formula-box">
+            <strong>Экономия в неделю</strong>
+            <span>10 ч × 1 250 ₽ = 12 500 ₽</span>
+          </div>
+
+          <div class="formula-box">
+            <strong>Экономия в год</strong>
+            <span>12 500 ₽ × 52 = 650 000 ₽</span>
+          </div>
+        </div>
+
+        <div class="money-note">
+          * Расчёт консервативный: только по стоимости времени аналитиков.
+          Не включает стоимость исправления ошибок, задержки отчётности и риск неверных решений на неточных данных.
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:20px;">
+        <div class="card reveal">
+          <div class="icon mint">🚀</div>
+          <h3>Быстрее подготовка данных</h3>
+          <p>
+            Общая таблица формируется автоматически, без ожидания ручной сборки и повторной сверки.
+          </p>
+        </div>
+        <div class="card reveal">
+          <div class="icon blue">🎯</div>
+          <h3>Выше качество данных</h3>
+          <p>
+            Автоматизация уменьшает количество опечаток, ручных потерь строк и дублей.
+          </p>
+        </div>
+        <div class="card reveal">
+          <div class="icon yellow">📈</div>
+          <h3>Больше времени на анализ</h3>
+          <p>
+            Команда сможет тратить больше времени на выводы, гипотезы и поддержку решений бизнеса.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="solution">
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">Решение</div>
+        <h2>Как будет работать автоматизация через N8N</h2>
+        <p>
+          N8N будет забирать данные из Excel-файлов, объединять их по заданным правилам,
+          проверять корректность и записывать результат в общую таблицу.
+        </p>
+      </div>
+
+      <div class="solution-grid">
+        <div class="step-card reveal">
+          <div class="step-no">1</div>
+          <h3>Забор данных</h3>
+          <p>
+            Сценарий получает данные из Excel-файлов по расписанию или по событию обновления.
+          </p>
+        </div>
+
+        <div class="step-card reveal">
+          <div class="step-no">2</div>
+          <h3>Проверка структуры</h3>
+          <p>
+            Проверяются нужные колонки, формат значений и заполненность обязательных полей.
+          </p>
+        </div>
+
+        <div class="step-card reveal">
+          <div class="step-no">3</div>
+          <h3>Очистка и объединение</h3>
+          <p>
+            Удаляются дубли, данные приводятся к единому виду и собираются в общий набор.
+          </p>
+        </div>
+
+        <div class="step-card reveal">
+          <div class="step-no">4</div>
+          <h3>Запись результата</h3>
+          <p>
+            Готовые данные автоматически попадают в общую таблицу, а при ошибке приходит уведомление.
+          </p>
+        </div>
+      </div>
+
+      <div class="process reveal" style="margin-top:28px;">
+        <div class="process-node">
+          <h4>Excel-источники</h4>
+          <p>Исходные таблицы, с которыми команда работает сейчас.</p>
+          <div class="tag-row">
+            <span class="tag">без смены источника</span>
+            <span class="tag">привычный формат</span>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="process-node">
+          <h4>N8N workflow</h4>
+          <p>Сбор, нормализация, валидация, дедупликация и логика обработки.</p>
+          <div class="tag-row">
+            <span class="tag">валидация</span>
+            <span class="tag">дедупликация</span>
+            <span class="tag">лог ошибок</span>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="process-node">
+          <h4>Итоговая общая таблица</h4>
+          <p>Готовый единый файл для дальнейшей аналитики и использования командой.</p>
+          <div class="tag-row">
+            <span class="tag">актуально</span>
+            <span class="tag">быстро</span>
+            <span class="tag">предсказуемо</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">План внедрения</div>
+        <h2>Реализация своими силами за 2 недели</h2>
+        <p>
+          Без подрядчиков, без покупки новых сервисов и без длинного проекта.
+          Делаем быстрый, контролируемый запуск.
+        </p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-card reveal">
+          <div class="week">Неделя 1</div>
+          <h3>Анализ процесса и сборка прототипа</h3>
+          <ul>
+            <li>Разобрать текущую логику ручного сбора</li>
+            <li>Определить структуру Excel-источников</li>
+            <li>Настроить workflow в N8N</li>
+            <li>Сделать первую автоматическую сборку общей таблицы</li>
+          </ul>
+        </div>
+
+        <div class="timeline-card reveal">
+          <div class="week">Неделя 2</div>
+          <h3>Тестирование, доработка и запуск</h3>
+          <ul>
+            <li>Проверить корректность итоговых данных</li>
+            <li>Добавить проверку дублей и контроль ошибок</li>
+            <li>Запустить рабочий сценарий</li>
+            <li>Передать команде понятную схему использования</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">Риски</div>
+        <h2>Почему запуск безопасен для команды</h2>
+        <p>
+          Идея не требует дополнительного бюджета и не ломает текущий процесс:
+          автоматизацию можно внедрить аккуратно и поэтапно.
+        </p>
+      </div>
+
+      <div class="risk-grid">
+        <div class="card reveal">
+          <div class="icon blue">💸</div>
+          <h3>Без бюджета</h3>
+          <p>
+            Запуск своими силами, без внешних подрядчиков и без покупки нового дорогого инструмента.
+          </p>
+        </div>
+
+        <div class="card reveal">
+          <div class="icon mint">🔁</div>
+          <h3>Можно запустить параллельно</h3>
+          <p>
+            На этапе теста текущий ручной процесс остаётся как запасной вариант, без риска для результата.
+          </p>
+        </div>
+
+        <div class="card reveal">
+          <div class="icon yellow">🔍</div>
+          <h3>Прозрачная логика</h3>
+          <p>
+            В N8N весь сценарий визуальный: его легко объяснить, поддерживать и дорабатывать.
+          </p>
+        </div>
+
+        <div class="card reveal">
+          <div class="icon red">🛡️</div>
+          <h3>Меньше зависимости от человека</h3>
+          <p>
+            Результат меньше зависит от внимательности конкретного сотрудника и ручной сверки.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-top reveal">
+        <div class="eyebrow">FAQ</div>
+        <h2>Ответы на ожидаемые вопросы руководителя</h2>
+        <p>Коротко закрываем самые вероятные возражения заранее.</p>
+      </div>
+
+      <div class="faq">
+        <div class="faq-item reveal">
+          <button class="faq-q" type="button">
+            Почему стоит делать это сейчас?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            Потому что это быстрый способ вернуть команде 10 часов в неделю без бюджета.
+            Чем дольше процесс остаётся ручным, тем дольше компания платит за рутину и принимает риск ошибок.
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <button class="faq-q" type="button">
+            Почему N8N, а не оставить всё как есть?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            Потому что N8N позволяет автоматизировать повторяющиеся операции,
+            убрать ручной перенос данных, снизить количество ошибок и при этом сохранить управляемость процесса.
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <button class="faq-q" type="button">
+            Что будет, если источник данных изменится?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            Workflow можно быстро адаптировать. Визуальная логика и понятная структура делают поддержку проще,
+            чем постоянную ручную пересборку файлов.
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <button class="faq-q" type="button">
+            Это точно окупится?
+            <span class="faq-arrow">▼</span>
+          </button>
+          <div class="faq-a">
+            Да. Уже по консервативному расчёту эффект составляет около 650 000 ₽ в год
+            только за счёт времени команды, при нулевом дополнительном бюджете.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="approve">
+    <div class="container">
+      <div class="cta reveal">
+        <div class="eyebrow" style="background:rgba(255,255,255,.15); color:#fff;">Предложение к согласованию</div>
+        <h2>Что нужно, чтобы запустить это в работу</h2>
+        <p>
+          Достаточно согласовать пилот на 2 недели. После этого команда сможет получать общую таблицу
+          автоматически, с меньшим риском ошибок и без постоянной ручной сводки Excel-файлов.
+        </p>
+
+        <div class="cta-list">
+          <div class="cta-item">
+            <strong>1. Одобрить пилот</strong>
+            <span>Короткий запуск без бюджета и без внешней команды</span>
+          </div>
+          <div class="cta-item">
+            <strong>2. Дать доступ к источникам</strong>
+            <span>Нужны рабочие Excel-файлы и правила итоговой сборки</span>
+          </div>
+          <div class="cta-item">
+            <strong>3. Подтвердить критерий успеха</strong>
+            <span>Экономим 10 ч/неделю и снижаем ошибки в общей таблице</span>
+          </div>
+        </div>
+
+        <div style="margin-top:26px; display:flex; flex-wrap:wrap; gap:12px;">
+          <a href="#case" class="btn btn-primary">Посмотреть кейс ещё раз</a>
+          <a href="#plan" class="btn btn-secondary">Перейти к плану запуска</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    Подготовлено как внутренняя инициатива по автоматизации • N8N • Excel → общая таблица
+  </div>
+
+  <script>
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      if(window.scrollY > 30){
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    document.querySelectorAll('.faq-q').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.parentElement;
+        item.classList.toggle('open');
+      });
+    });
+  </script>
+</body>
+</html>
